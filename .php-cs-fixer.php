@@ -12,6 +12,7 @@ $finder = Finder::create()
     ->exclude('migrations')
     ->name('*.php')
     ->notName('*.blade.php')
+    ->notPath('config/reference.php')
     ->ignoreDotFiles(true)
     ->ignoreVCS(true);
 
