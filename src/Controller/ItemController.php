@@ -32,7 +32,7 @@ class ItemController extends AbstractController
         $items = $this->itemService->findShoppingListItems($shoppingList);
 
         return $this->json($items, Response::HTTP_OK, [], [
-            'groups' => ['item:read']
+            'groups' => ['item:read'],
         ]);
     }
 
@@ -49,14 +49,14 @@ class ItemController extends AbstractController
         if (count($errors) > 0) {
             return $this->json([
                 'error' => 'Validation failed',
-                'details' => (string) $errors
+                'details' => (string) $errors,
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $item = $this->itemService->createItem($dto, $shoppingList);
 
         return $this->json($item, Response::HTTP_CREATED, [], [
-            'groups' => ['item:read']
+            'groups' => ['item:read'],
         ]);
     }
 
@@ -67,12 +67,12 @@ class ItemController extends AbstractController
 
         if (!$item) {
             return $this->json([
-                'error' => 'Item not found'
+                'error' => 'Item not found',
             ], Response::HTTP_NOT_FOUND);
         }
 
         return $this->json($item, Response::HTTP_OK, [], [
-            'groups' => ['item:read']
+            'groups' => ['item:read'],
         ]);
     }
 
@@ -83,7 +83,7 @@ class ItemController extends AbstractController
 
         if (!$item) {
             return $this->json([
-                'error' => 'Item not found'
+                'error' => 'Item not found',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -97,14 +97,14 @@ class ItemController extends AbstractController
         if (count($errors) > 0) {
             return $this->json([
                 'error' => 'Validation failed',
-                'details' => (string) $errors
+                'details' => (string) $errors,
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $item = $this->itemService->updateItem($item, $dto);
 
         return $this->json($item, Response::HTTP_OK, [], [
-            'groups' => ['item:read']
+            'groups' => ['item:read'],
         ]);
     }
 
@@ -115,7 +115,7 @@ class ItemController extends AbstractController
 
         if (!$item) {
             return $this->json([
-                'error' => 'Item not found'
+                'error' => 'Item not found',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -131,14 +131,14 @@ class ItemController extends AbstractController
 
         if (!$item) {
             return $this->json([
-                'error' => 'Item not found'
+                'error' => 'Item not found',
             ], Response::HTTP_NOT_FOUND);
         }
 
         $item = $this->itemService->toggleItem($item);
 
         return $this->json($item, Response::HTTP_OK, [], [
-            'groups' => ['item:read']
+            'groups' => ['item:read'],
         ]);
     }
 }

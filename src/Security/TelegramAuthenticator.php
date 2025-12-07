@@ -42,7 +42,7 @@ class TelegramAuthenticator extends AbstractAuthenticator
         }
 
         return new SelfValidatingPassport(
-            new UserBadge($user->getUserIdentifier(), function() use ($user) {
+            new UserBadge($user->getUserIdentifier(), function () use ($user) {
                 return $user;
             })
         );
@@ -57,7 +57,7 @@ class TelegramAuthenticator extends AbstractAuthenticator
     {
         return new JsonResponse([
             'error' => 'Authentication failed',
-            'message' => $exception->getMessage()
+            'message' => $exception->getMessage(),
         ], Response::HTTP_UNAUTHORIZED);
     }
 }

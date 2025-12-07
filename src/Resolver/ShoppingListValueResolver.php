@@ -21,20 +21,20 @@ class ShoppingListValueResolver implements ValueResolverInterface
     ) {
     }
 
+    /**
+     * @return iterable<ShoppingList>
+     */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
-        // Check if the argument type is ShoppingList
         if ($argument->getType() !== ShoppingList::class) {
             return [];
         }
 
-        // Get listId from route parameters
         $listId = $request->attributes->get('listId');
         if (!$listId) {
             return [];
         }
 
-        // Get current user
         $token = $this->tokenStorage->getToken();
         if (!$token) {
             throw new NotFoundHttpException('Shopping list not found');
@@ -45,10 +45,9 @@ class ShoppingListValueResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Shopping list not found');
         }
 
-        // Find shopping list
         $shoppingList = $this->shoppingListRepository->findOneBy([
             'id' => (int) $listId,
-            'user' => $user
+            'user' => $user,
         ]);
 
         if (!$shoppingList) {

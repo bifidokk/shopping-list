@@ -66,6 +66,7 @@ class User implements UserInterface
     public function setTelegramId(int $telegramId): self
     {
         $this->telegramId = $telegramId;
+
         return $this;
     }
 
@@ -77,6 +78,7 @@ class User implements UserInterface
     public function setFirstName(?string $firstName): self
     {
         $this->firstName = $firstName;
+
         return $this;
     }
 
@@ -88,6 +90,7 @@ class User implements UserInterface
     public function setLastName(?string $lastName): self
     {
         $this->lastName = $lastName;
+
         return $this;
     }
 
@@ -99,6 +102,7 @@ class User implements UserInterface
     public function setUsername(?string $username): self
     {
         $this->username = $username;
+
         return $this;
     }
 
@@ -110,6 +114,7 @@ class User implements UserInterface
     public function setLanguageCode(?string $languageCode): self
     {
         $this->languageCode = $languageCode;
+
         return $this;
     }
 
@@ -126,6 +131,7 @@ class User implements UserInterface
     public function setUpdatedAt(\DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 

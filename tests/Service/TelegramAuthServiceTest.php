@@ -39,11 +39,11 @@ class TelegramAuthServiceTest extends TestCase
         ];
 
         // Calculate hash
-        $dataCheckString = "auth_date={$authDate}\nuser=" . $data['user'];
-        $secretKey = hash_hmac('sha256', $this->botToken, "WebAppData", true);
+        $dataCheckString = "auth_date={$authDate}\nuser=".$data['user'];
+        $secretKey = hash_hmac('sha256', $this->botToken, 'WebAppData', true);
         $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
-        $initData = http_build_query($data) . '&hash=' . $hash;
+        $initData = http_build_query($data).'&hash='.$hash;
 
         $result = $this->service->validateInitData($initData);
 
@@ -58,7 +58,7 @@ class TelegramAuthServiceTest extends TestCase
         $initData = http_build_query([
             'auth_date' => (string) $authDate,
             'user' => '{"id":123456789}',
-            'hash' => 'invalid_hash'
+            'hash' => 'invalid_hash',
         ]);
 
         $result = $this->service->validateInitData($initData);
@@ -70,7 +70,7 @@ class TelegramAuthServiceTest extends TestCase
     {
         $initData = http_build_query([
             'auth_date' => (string) time(),
-            'user' => '{"id":123456789}'
+            'user' => '{"id":123456789}',
         ]);
 
         $result = $this->service->validateInitData($initData);
@@ -88,11 +88,11 @@ class TelegramAuthServiceTest extends TestCase
             'user' => '{"id":123456789}',
         ];
 
-        $dataCheckString = "auth_date={$authDate}\nuser=" . $data['user'];
-        $secretKey = hash_hmac('sha256', $this->botToken, "WebAppData", true);
+        $dataCheckString = "auth_date={$authDate}\nuser=".$data['user'];
+        $secretKey = hash_hmac('sha256', $this->botToken, 'WebAppData', true);
         $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
-        $initData = http_build_query($data) . '&hash=' . $hash;
+        $initData = http_build_query($data).'&hash='.$hash;
 
         $result = $this->service->validateInitData($initData);
 
@@ -107,8 +107,8 @@ class TelegramAuthServiceTest extends TestCase
                 'first_name' => 'John',
                 'last_name' => 'Doe',
                 'username' => 'johndoe',
-                'language_code' => 'en'
-            ])
+                'language_code' => 'en',
+            ]),
         ];
 
         $this->userRepository->expects($this->once())
@@ -150,8 +150,8 @@ class TelegramAuthServiceTest extends TestCase
                 'first_name' => 'NewName',
                 'last_name' => 'NewLastName',
                 'username' => 'newusername',
-                'language_code' => 'en'
-            ])
+                'language_code' => 'en',
+            ]),
         ];
 
         $this->userRepository->expects($this->once())
@@ -185,7 +185,7 @@ class TelegramAuthServiceTest extends TestCase
     public function testFindOrCreateUserInvalidUserData(): void
     {
         $telegramData = [
-            'user' => json_encode(['no_id_field' => true])
+            'user' => json_encode(['no_id_field' => true]),
         ];
 
         $result = $this->service->findOrCreateUser($telegramData);
@@ -208,11 +208,11 @@ class TelegramAuthServiceTest extends TestCase
             'user' => '{"id":123456789,"first_name":"John"}',
         ];
 
-        $dataCheckString = "auth_date={$authDate}\nuser=" . $data['user'];
-        $secretKey = hash_hmac('sha256', $this->botToken, "WebAppData", true);
+        $dataCheckString = "auth_date={$authDate}\nuser=".$data['user'];
+        $secretKey = hash_hmac('sha256', $this->botToken, 'WebAppData', true);
         $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
-        $initData = http_build_query($data) . '&hash=' . $hash;
+        $initData = http_build_query($data).'&hash='.$hash;
 
         $result = $this->service->authenticate($initData);
 

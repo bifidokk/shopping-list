@@ -224,7 +224,7 @@ class ItemServiceTest extends TestCase
             ->method('findOneBy')
             ->with([
                 'id' => 1,
-                'shoppingList' => $this->shoppingList
+                'shoppingList' => $this->shoppingList,
             ])
             ->willReturn($item);
 
@@ -239,7 +239,7 @@ class ItemServiceTest extends TestCase
             ->method('findOneBy')
             ->with([
                 'id' => 999,
-                'shoppingList' => $this->shoppingList
+                'shoppingList' => $this->shoppingList,
             ])
             ->willReturn(null);
 

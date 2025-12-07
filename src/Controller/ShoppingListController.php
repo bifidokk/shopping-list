@@ -33,7 +33,7 @@ class ShoppingListController extends AbstractController
         $lists = $this->shoppingListService->findUserShoppingLists($user);
 
         return $this->json($lists, Response::HTTP_OK, [], [
-            'groups' => ['shopping_list:read']
+            'groups' => ['shopping_list:read'],
         ]);
     }
 
@@ -50,14 +50,14 @@ class ShoppingListController extends AbstractController
         if (count($errors) > 0) {
             return $this->json([
                 'error' => 'Validation failed',
-                'details' => (string) $errors
+                'details' => (string) $errors,
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $shoppingList = $this->shoppingListService->createShoppingList($dto, $user);
 
         return $this->json($shoppingList, Response::HTTP_CREATED, [], [
-            'groups' => ['shopping_list:read']
+            'groups' => ['shopping_list:read'],
         ]);
     }
 
@@ -68,12 +68,12 @@ class ShoppingListController extends AbstractController
 
         if (!$shoppingList) {
             return $this->json([
-                'error' => 'Shopping list not found'
+                'error' => 'Shopping list not found',
             ], Response::HTTP_NOT_FOUND);
         }
 
         return $this->json($shoppingList, Response::HTTP_OK, [], [
-            'groups' => ['shopping_list:read', 'shopping_list:items']
+            'groups' => ['shopping_list:read', 'shopping_list:items'],
         ]);
     }
 
@@ -84,7 +84,7 @@ class ShoppingListController extends AbstractController
 
         if (!$shoppingList) {
             return $this->json([
-                'error' => 'Shopping list not found'
+                'error' => 'Shopping list not found',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -98,14 +98,14 @@ class ShoppingListController extends AbstractController
         if (count($errors) > 0) {
             return $this->json([
                 'error' => 'Validation failed',
-                'details' => (string) $errors
+                'details' => (string) $errors,
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $shoppingList = $this->shoppingListService->updateShoppingList($shoppingList, $dto);
 
         return $this->json($shoppingList, Response::HTTP_OK, [], [
-            'groups' => ['shopping_list:read']
+            'groups' => ['shopping_list:read'],
         ]);
     }
 
@@ -116,7 +116,7 @@ class ShoppingListController extends AbstractController
 
         if (!$shoppingList) {
             return $this->json([
-                'error' => 'Shopping list not found'
+                'error' => 'Shopping list not found',
             ], Response::HTTP_NOT_FOUND);
         }
 

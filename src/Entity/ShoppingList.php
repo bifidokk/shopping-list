@@ -67,6 +67,7 @@ class ShoppingList
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -78,6 +79,7 @@ class ShoppingList
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -89,6 +91,7 @@ class ShoppingList
     public function setUser(User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -112,11 +115,7 @@ class ShoppingList
 
     public function removeItem(Item $item): self
     {
-        if ($this->items->removeElement($item)) {
-            if ($item->getShoppingList() === $this) {
-                $item->setShoppingList(null);
-            }
-        }
+        $this->items->removeElement($item);
 
         return $this;
     }
@@ -134,6 +133,7 @@ class ShoppingList
     public function setUpdatedAt(\DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 }

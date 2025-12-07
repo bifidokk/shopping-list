@@ -18,61 +18,54 @@ class TelegramAuthService
     }
 
     /**
-     * Validates Telegram initData from Mini App
-     *
-     * @param string $initData The raw initData string from Telegram
-     * @return array|null Parsed data if valid, null otherwise
+     * @return array<string, mixed>|null
      */
     public function validateInitData(string $initData): ?array
     {
         parse_str($initData, $data);
 
-        if (!isset($data['hash'])) {
+        if (!isset($data['hash']) || !is_string($data['hash'])) {
             return null;
         }
 
         $hash = $data['hash'];
         unset($data['hash']);
 
-        // Sort data alphabetically by key
         ksort($data);
 
-        // Build data check string
         $dataCheckArr = [];
         foreach ($data as $key => $value) {
-            $dataCheckArr[] = $key . '=' . $value;
+            if (!is_scalar($value)) {
+                continue;
+            }
+
+            $dataCheckArr[] = $key.'='.(string) $value;
         }
+
         $dataCheckString = implode("\n", $dataCheckArr);
 
-        // Calculate secret key
-        $secretKey = hash_hmac('sha256', $this->botToken, "WebAppData", true);
-
-        // Calculate hash
+        $secretKey = hash_hmac('sha256', $this->botToken, 'WebAppData', true);
         $calculatedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
-        // Verify hash
         if (!hash_equals($calculatedHash, $hash)) {
             return null;
         }
 
-        // Verify auth_date is recent (within 24 hours)
         if (isset($data['auth_date'])) {
             $authDate = (int) $data['auth_date'];
             $currentTime = time();
 
-            if ($currentTime - $authDate > 86400) { // 24 hours
+            if ($currentTime - $authDate > 86400) {
                 return null;
             }
         }
 
+        // @phpstan-ignore-next-line parse_str creates array with string keys in this context
         return $data;
     }
 
     /**
-     * Finds or creates a user from Telegram data
-     *
-     * @param array $telegramData Validated Telegram data
-     * @return User|null
+     * @param array<string, mixed> $telegramData
      */
     public function findOrCreateUser(array $telegramData): ?User
     {
@@ -88,20 +81,17 @@ class TelegramAuthService
 
         $telegramId = (int) $userData['id'];
 
-        // Find existing user
         $user = $this->userRepository->findOneBy([
-            'telegramId' => $telegramId
+            'telegramId' => $telegramId,
         ]);
 
         if ($user) {
-            // Update user data
             $user->setFirstName($userData['first_name'] ?? null);
             $user->setLastName($userData['last_name'] ?? null);
             $user->setUsername($userData['username'] ?? null);
             $user->setLanguageCode($userData['language_code'] ?? null);
             $user->setUpdatedAt(new \DateTime());
         } else {
-            // Create new user
             $user = new User();
             $user->setTelegramId($telegramId);
             $user->setFirstName($userData['first_name'] ?? null);
@@ -117,12 +107,6 @@ class TelegramAuthService
         return $user;
     }
 
-    /**
-     * Authenticates a user from initData string
-     *
-     * @param string $initData The raw initData from Telegram Mini App
-     * @return User|null The authenticated user or null if invalid
-     */
     public function authenticate(string $initData): ?User
     {
         $validatedData = $this->validateInitData($initData);

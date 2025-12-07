@@ -40,7 +40,7 @@ class Item
 
     #[ORM\ManyToOne(targetEntity: ShoppingList::class, inversedBy: 'items')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?ShoppingList $shoppingList = null;
+    private ShoppingList $shoppingList;
 
     #[ORM\Column(type: 'datetime')]
     #[Groups(['item:read', 'shopping_list:items'])]
@@ -69,6 +69,7 @@ class Item
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -80,6 +81,7 @@ class Item
     public function setQuantity(?int $quantity): self
     {
         $this->quantity = $quantity;
+
         return $this;
     }
 
@@ -91,6 +93,7 @@ class Item
     public function setUnit(?string $unit): self
     {
         $this->unit = $unit;
+
         return $this;
     }
 
@@ -102,6 +105,7 @@ class Item
     public function setNotes(?string $notes): self
     {
         $this->notes = $notes;
+
         return $this;
     }
 
@@ -113,17 +117,19 @@ class Item
     public function setIsDone(bool $isDone): self
     {
         $this->isDone = $isDone;
+
         return $this;
     }
 
-    public function getShoppingList(): ?ShoppingList
+    public function getShoppingList(): ShoppingList
     {
         return $this->shoppingList;
     }
 
-    public function setShoppingList(?ShoppingList $shoppingList): self
+    public function setShoppingList(ShoppingList $shoppingList): self
     {
         $this->shoppingList = $shoppingList;
+
         return $this;
     }
 
@@ -140,6 +146,7 @@ class Item
     public function setUpdatedAt(\DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 }

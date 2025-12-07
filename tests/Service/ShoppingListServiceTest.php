@@ -163,7 +163,7 @@ class ShoppingListServiceTest extends TestCase
             ->method('findOneBy')
             ->with([
                 'id' => 1,
-                'user' => $this->user
+                'user' => $this->user,
             ])
             ->willReturn($shoppingList);
 
@@ -178,7 +178,7 @@ class ShoppingListServiceTest extends TestCase
             ->method('findOneBy')
             ->with([
                 'id' => 999,
-                'user' => $this->user
+                'user' => $this->user,
             ])
             ->willReturn(null);
 

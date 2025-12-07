@@ -59,7 +59,7 @@ class ItemService
         }
 
         $item->setUpdatedAt(new \DateTime());
-        $item->getShoppingList()?->setUpdatedAt(new \DateTime());
+        $item->getShoppingList()->setUpdatedAt(new \DateTime());
         $this->entityManager->flush();
 
         return $item;
@@ -69,7 +69,7 @@ class ItemService
     {
         $shoppingList = $item->getShoppingList();
         $this->entityManager->remove($item);
-        $shoppingList?->setUpdatedAt(new \DateTime());
+        $shoppingList->setUpdatedAt(new \DateTime());
         $this->entityManager->flush();
     }
 
@@ -77,12 +77,15 @@ class ItemService
     {
         $item->setIsDone(!$item->isDone());
         $item->setUpdatedAt(new \DateTime());
-        $item->getShoppingList()?->setUpdatedAt(new \DateTime());
+        $item->getShoppingList()->setUpdatedAt(new \DateTime());
         $this->entityManager->flush();
 
         return $item;
     }
 
+    /**
+     * @return Item[]
+     */
     public function findShoppingListItems(ShoppingList $shoppingList): array
     {
         return $this->itemRepository->findBy(
@@ -95,7 +98,7 @@ class ItemService
     {
         return $this->itemRepository->findOneBy([
             'id' => $id,
-            'shoppingList' => $shoppingList
+            'shoppingList' => $shoppingList,
         ]);
     }
 }

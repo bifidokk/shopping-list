@@ -54,6 +54,9 @@ class ShoppingListService
         $this->entityManager->flush();
     }
 
+    /**
+     * @return ShoppingList[]
+     */
     public function findUserShoppingLists(User $user): array
     {
         return $this->shoppingListRepository->findBy(
@@ -66,7 +69,7 @@ class ShoppingListService
     {
         return $this->shoppingListRepository->findOneBy([
             'id' => $id,
-            'user' => $user
+            'user' => $user,
         ]);
     }
 }
