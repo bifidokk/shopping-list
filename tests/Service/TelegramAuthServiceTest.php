@@ -9,6 +9,7 @@ use App\Repository\UserRepository;
 use App\Service\TelegramAuthService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 class TelegramAuthServiceTest extends TestCase
 {
@@ -21,10 +22,12 @@ class TelegramAuthServiceTest extends TestCase
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->userRepository = $this->createMock(UserRepository::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->service = new TelegramAuthService(
             $this->entityManager,
             $this->userRepository,
-            $this->botToken
+            $this->logger,
+            $this->botToken,
         );
     }
 

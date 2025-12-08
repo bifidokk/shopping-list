@@ -7,13 +7,15 @@ namespace App\Service;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 
 class TelegramAuthService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
         private UserRepository $userRepository,
-        private string $botToken
+        private LoggerInterface $logger,
+        private string $botToken,
     ) {
     }
 
@@ -25,6 +27,8 @@ class TelegramAuthService
         parse_str($initData, $data);
 
         if (!isset($data['hash']) || !is_string($data['hash'])) {
+            $this->logger->warning('Telegram auth failed: missing or invalid hash');
+
             return null;
         }
 
@@ -48,6 +52,8 @@ class TelegramAuthService
         $calculatedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
         if (!hash_equals($calculatedHash, $hash)) {
+            $this->logger->warning('Telegram auth failed: invalid signature');
+
             return null;
         }
 
@@ -56,6 +62,11 @@ class TelegramAuthService
             $currentTime = time();
 
             if ($currentTime - $authDate > 86400) {
+                $this->logger->warning('Telegram auth failed: initData expired', [
+                    'auth_date' => $authDate,
+                    'age_seconds' => $currentTime - $authDate,
+                ]);
+
                 return null;
             }
         }
@@ -70,12 +81,16 @@ class TelegramAuthService
     public function findOrCreateUser(array $telegramData): ?User
     {
         if (!isset($telegramData['user'])) {
+            $this->logger->warning('Telegram auth failed: missing user data');
+
             return null;
         }
 
         $userData = json_decode($telegramData['user'], true);
 
         if (!isset($userData['id'])) {
+            $this->logger->warning('Telegram auth failed: missing user ID');
+
             return null;
         }
 
@@ -86,12 +101,22 @@ class TelegramAuthService
         ]);
 
         if ($user) {
+            $this->logger->info('User authenticated', [
+                'telegram_id' => $telegramId,
+                'username' => $userData['username'] ?? null,
+            ]);
+
             $user->setFirstName($userData['first_name'] ?? null);
             $user->setLastName($userData['last_name'] ?? null);
             $user->setUsername($userData['username'] ?? null);
             $user->setLanguageCode($userData['language_code'] ?? null);
             $user->setUpdatedAt(new \DateTime());
         } else {
+            $this->logger->info('Creating new user', [
+                'telegram_id' => $telegramId,
+                'username' => $userData['username'] ?? null,
+            ]);
+
             $user = new User();
             $user->setTelegramId($telegramId);
             $user->setFirstName($userData['first_name'] ?? null);
@@ -109,12 +134,24 @@ class TelegramAuthService
 
     public function authenticate(string $initData): ?User
     {
+        $this->logger->debug('Attempting Telegram authentication');
+
         $validatedData = $this->validateInitData($initData);
 
         if (!$validatedData) {
+            $this->logger->warning('Telegram authentication failed');
+
             return null;
         }
 
-        return $this->findOrCreateUser($validatedData);
+        $user = $this->findOrCreateUser($validatedData);
+
+        if ($user) {
+            $this->logger->info('Telegram authentication successful', [
+                'telegram_id' => $user->getTelegramId(),
+            ]);
+        }
+
+        return $user;
     }
 }
