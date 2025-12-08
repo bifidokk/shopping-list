@@ -8,6 +8,10 @@ services:
       # You should definitely change the password in production
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
       POSTGRES_USER: ${POSTGRES_USER:-app}
+    ports:
+      - "5432:5432"
+    profiles:
+      - dev
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
       timeout: 5s
@@ -19,7 +23,27 @@ services:
       # - ./docker/db/data:/var/lib/postgresql/data:rw
 ###< doctrine/doctrine-bundle ###
 
+  # Test database for running integration tests
+  database_test:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-shopping_list}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-test}
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-test}
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_TEST_DB:-shopping_list}", "-U", "${POSTGRES_TEST_USER:-test}"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_test_data:/var/lib/postgresql/data:rw
+    profiles:
+      - test
+
 volumes:
 ###> doctrine/doctrine-bundle ###
   database_data:
 ###< doctrine/doctrine-bundle ###
+  database_test_data:

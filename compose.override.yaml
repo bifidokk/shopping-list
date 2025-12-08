@@ -1,7 +1,14 @@
-
 services:
 ###> doctrine/doctrine-bundle ###
   database:
+    profiles:
+      - dev
     ports:
-      - "5432"
+      - "5432:5432"
+
+  database_test:
+    profiles:
+      - test
+    ports:
+      - "5433:5432"
 ###< doctrine/doctrine-bundle ###

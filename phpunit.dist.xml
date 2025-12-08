@@ -7,6 +7,7 @@
          failOnDeprecation="true"
          failOnNotice="true"
          failOnWarning="true"
+         failOnPhpunitNotice="false"
          bootstrap="tests/bootstrap.php"
          cacheDirectory=".phpunit.cache"
 >
@@ -44,5 +45,6 @@
             <parameter name="clock-mock-namespaces" value="App" />
             <parameter name="dns-mock-namespaces" value="App" />
         </bootstrap>
+        <bootstrap class="DAMA\DoctrineTestBundle\PHPUnit\PHPUnitExtension" />
     </extensions>
 </phpunit>
