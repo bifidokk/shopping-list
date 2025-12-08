@@ -7,12 +7,14 @@ namespace App\Resolver;
 use App\Entity\ShoppingList;
 use App\Entity\User;
 use App\Repository\ShoppingListRepository;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
+#[AutoconfigureTag('controller.argument_value_resolver', ['priority' => 150])]
 class ShoppingListValueResolver implements ValueResolverInterface
 {
     public function __construct(

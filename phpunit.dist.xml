@@ -8,6 +8,7 @@
          failOnNotice="true"
          failOnWarning="true"
          failOnPhpunitNotice="false"
+         beStrictAboutOutputDuringTests="false"
          bootstrap="tests/bootstrap.php"
          cacheDirectory=".phpunit.cache"
 >
@@ -16,6 +17,7 @@
         <ini name="error_reporting" value="-1" />
         <server name="APP_ENV" value="test" force="true" />
         <server name="SHELL_VERBOSITY" value="-1" />
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
     </php>
 
     <testsuites>
