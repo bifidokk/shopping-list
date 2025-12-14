@@ -24,39 +24,53 @@ class TelegramAuthService
      */
     public function validateInitData(string $initData): ?array
     {
-        parse_str($initData, $data);
+        if ($this->isSafe($initData)) {
+            parse_str(rawurldecode($initData), $data);
 
-        if (!isset($data['hash']) || !is_string($data['hash'])) {
-            $this->logger->warning('Telegram auth failed: missing or invalid hash');
-
-            return null;
+            return $this->checkAuthDate($data);
         }
 
-        $hash = $data['hash'];
-        unset($data['hash']);
+        $this->logger->warning('Telegram auth failed: missing hash or signature');
 
-        ksort($data);
+        return null;
+    }
 
-        $dataCheckArr = [];
-        foreach ($data as $key => $value) {
-            if (!is_scalar($value)) {
-                continue;
-            }
-
-            $dataCheckArr[] = $key.'='.(string) $value;
-        }
-
-        $dataCheckString = implode("\n", $dataCheckArr);
-
+    public function isSafe(string $initData): bool
+    {
+        [$checksum, $sortedInitData] = $this->convertInitData($initData);
         $secretKey = hash_hmac('sha256', $this->botToken, 'WebAppData', true);
-        $calculatedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
+        $hash = bin2hex(hash_hmac('sha256', $sortedInitData, $secretKey, true));
 
-        if (!hash_equals($calculatedHash, $hash)) {
-            $this->logger->warning('Telegram auth failed: invalid signature');
+        return strcmp($hash, $checksum) === 0;
+    }
 
-            return null;
+    private function convertInitData(string $initData): array
+    {
+        $initDataArray = explode('&', rawurldecode($initData));
+        $needle = 'hash=';
+        $hash = '';
+
+        foreach ($initDataArray as &$data) {
+            if (substr($data, 0, \strlen($needle)) === $needle) {
+                $hash = substr_replace($data, '', 0, \strlen($needle));
+                $data = null;
+            }
         }
 
+        $initDataArray = array_filter($initDataArray);
+        sort($initDataArray);
+
+        return [$hash, implode("\n", $initDataArray)];
+    }
+
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>|null
+     */
+    private function checkAuthDate(array $data): ?array
+    {
         if (isset($data['auth_date'])) {
             $authDate = (int) $data['auth_date'];
             $currentTime = time();

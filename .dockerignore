@@ -1,27 +1,35 @@
-
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
 /.env.*.local
-/.env.docker.local
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
-/CLAUDE.md
-/.idea
 
 ###> phpunit/phpunit ###
 /phpunit.xml
-/.phpunit.cache/
+.phpunit.result.cache
 ###< phpunit/phpunit ###
 
-###> phpstan/phpstan ###
-/.phpstan.cache/
-###< phpstan/phpstan ###
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
 
-###> friendsofphp/php-cs-fixer ###
-/.php-cs-fixer.cache
-###< friendsofphp/php-cs-fixer ###
-/.env.docker
+# Docker
+.docker
+*.log
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+
+# Documentation
+*.md
+!README.md

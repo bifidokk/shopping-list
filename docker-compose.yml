@@ -1,13 +1,38 @@
-
 services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopping-list-php
+    volumes:
+      - .:/var/www
+      - ./var/log:/var/www/var/log
+    environment:
+      XDEBUG_MODE: debug,develop,coverage
+    depends_on:
+      database:
+        condition: service_healthy
+    profiles:
+      - dev
+    env_file:
+        - .env.local
+
+  nginx:
+    image: nginx:alpine
+    container_name: shopping-list-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    profiles:
+      - dev
+
 ###> doctrine/doctrine-bundle ###
   database:
     image: postgres:${POSTGRES_VERSION:-16}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
     ports:
       - "5432:5432"
     profiles:
@@ -19,21 +44,21 @@ services:
       start_period: 60s
     volumes:
       - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
+    env_file:
+      - .env.local
 ###< doctrine/doctrine-bundle ###
 
   # Test database for running integration tests
   database_test:
     image: postgres:${POSTGRES_VERSION:-16}-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_TEST_DB:-shopping_list}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-shopping_list_test}
       POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-test}
       POSTGRES_USER: ${POSTGRES_TEST_USER:-test}
     ports:
       - "5433:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_TEST_DB:-shopping_list}", "-U", "${POSTGRES_TEST_USER:-test}"]
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_TEST_DB:-shopping_list_test}", "-U", "${POSTGRES_TEST_USER:-test}"]
       timeout: 5s
       retries: 5
       start_period: 60s
