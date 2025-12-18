@@ -196,4 +196,49 @@ class ShoppingListController extends AbstractController
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
+
+    #[Route('/{id}/set-default', methods: ['POST'])]
+    public function setDefault(int $id, #[CurrentUser] User $user): JsonResponse
+    {
+        $this->logger->info('Setting shopping list as default', [
+            'user_id' => $user->getTelegramId(),
+            'shopping_list_id' => $id,
+        ]);
+
+        $shoppingList = $this->shoppingListService->findUserShoppingList($id, $user);
+
+        if (!$shoppingList) {
+            $this->logger->warning('Shopping list not found for set default', [
+                'user_id' => $user->getTelegramId(),
+                'shopping_list_id' => $id,
+            ]);
+
+            return $this->json([
+                'error' => 'Shopping list not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Skip if already default
+        if ($shoppingList->isDefault()) {
+            $this->logger->debug('Shopping list is already default', [
+                'user_id' => $user->getTelegramId(),
+                'shopping_list_id' => $id,
+            ]);
+
+            return $this->json($shoppingList, Response::HTTP_OK, [], [
+                'groups' => ['shopping_list:read'],
+            ]);
+        }
+
+        $shoppingList = $this->shoppingListService->setAsDefault($shoppingList);
+
+        $this->logger->info('Shopping list set as default', [
+            'user_id' => $user->getTelegramId(),
+            'shopping_list_id' => $id,
+        ]);
+
+        return $this->json($shoppingList, Response::HTTP_OK, [], [
+            'groups' => ['shopping_list:read'],
+        ]);
+    }
 }

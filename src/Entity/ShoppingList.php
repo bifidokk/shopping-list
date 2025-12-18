@@ -47,6 +47,10 @@ class ShoppingList
     #[Groups(['shopping_list:read'])]
     private \DateTimeInterface $updatedAt;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['shopping_list:read'])]
+    private bool $isDefault = false;
+
     public function __construct()
     {
         $this->items = new ArrayCollection();
@@ -133,6 +137,18 @@ class ShoppingList
     public function setUpdatedAt(\DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->isDefault;
+    }
+
+    public function setIsDefault(bool $isDefault): self
+    {
+        $this->isDefault = $isDefault;
 
         return $this;
     }

@@ -24,6 +24,7 @@ class ShoppingListFixtures extends Fixture implements DependentFixtureInterface,
         $shoppingList->setName('Test Shopping List');
         $shoppingList->setDescription('A test shopping list for integration tests');
         $shoppingList->setUser($user);
+        $shoppingList->setIsDefault(true);
         $manager->persist($shoppingList);
 
         $this->addReference(self::SHOPPING_LIST_REFERENCE, $shoppingList);

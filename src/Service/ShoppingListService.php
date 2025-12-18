@@ -26,6 +26,10 @@ class ShoppingListService
         $shoppingList->setDescription($dto->description);
         $shoppingList->setUser($user);
 
+        // Check if this is the user's first list
+        $isFirstList = $this->shoppingListRepository->countUserLists($user) === 0;
+        $shoppingList->setIsDefault($isFirstList);
+
         $this->entityManager->persist($shoppingList);
         $this->entityManager->flush();
 
@@ -50,8 +54,16 @@ class ShoppingListService
 
     public function deleteShoppingList(ShoppingList $shoppingList): void
     {
+        $wasDefault = $shoppingList->isDefault();
+        $user = $shoppingList->getUser();
+
         $this->entityManager->remove($shoppingList);
         $this->entityManager->flush();
+
+        // If we deleted the default list, promote another list
+        if ($wasDefault) {
+            $this->promoteNextListToDefault($user);
+        }
     }
 
     /**
@@ -71,5 +83,37 @@ class ShoppingListService
             'id' => $id,
             'user' => $user,
         ]);
+    }
+
+    public function setAsDefault(ShoppingList $shoppingList): ShoppingList
+    {
+        $user = $shoppingList->getUser();
+
+        // Unset current default list
+        $currentDefault = $this->shoppingListRepository->findUserDefaultList($user);
+        if ($currentDefault && $currentDefault->getId() !== $shoppingList->getId()) {
+            $currentDefault->setIsDefault(false);
+            $currentDefault->setUpdatedAt(new \DateTime());
+        }
+
+        // Set new default
+        $shoppingList->setIsDefault(true);
+        $shoppingList->setUpdatedAt(new \DateTime());
+
+        $this->entityManager->flush();
+
+        return $shoppingList;
+    }
+
+    private function promoteNextListToDefault(User $user): void
+    {
+        // Find the first remaining list (oldest created)
+        $nextList = $this->shoppingListRepository->findFirstNonDefaultList($user);
+
+        if ($nextList) {
+            $nextList->setIsDefault(true);
+            $nextList->setUpdatedAt(new \DateTime());
+            $this->entityManager->flush();
+        }
     }
 }
