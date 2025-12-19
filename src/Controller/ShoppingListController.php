@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Dto\CreateShoppingListDto;
+use App\Dto\ShoppingListDto;
 use App\Dto\UpdateShoppingListDto;
 use App\Entity\User;
+use App\Repository\ItemRepository;
 use App\Service\ShoppingListService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,6 +25,7 @@ class ShoppingListController extends AbstractController
 {
     public function __construct(
         private ShoppingListService $shoppingListService,
+        private ItemRepository $itemRepository,
         private SerializerInterface $serializer,
         private ValidatorInterface $validator,
         private LoggerInterface $logger
@@ -38,14 +41,21 @@ class ShoppingListController extends AbstractController
 
         $lists = $this->shoppingListService->findUserShoppingLists($user);
 
+        $itemCounts = $this->itemRepository->getItemCountsForLists($lists);
+
+        $listDtos = array_map(function ($list) use ($itemCounts) {
+            $listId = $list->getId();
+            $counts = $itemCounts[$listId] ?? ['total' => 0, 'completed' => 0];
+
+            return ShoppingListDto::fromEntity($list, $counts['total'], $counts['completed']);
+        }, $lists);
+
         $this->logger->debug('Shopping lists retrieved', [
             'user_id' => $user->getTelegramId(),
-            'count' => count($lists),
+            'count' => count($listDtos),
         ]);
 
-        return $this->json($lists, Response::HTTP_OK, [], [
-            'groups' => ['shopping_list:read'],
-        ]);
+        return $this->json($listDtos, Response::HTTP_OK);
     }
 
     #[Route('', methods: ['POST'])]

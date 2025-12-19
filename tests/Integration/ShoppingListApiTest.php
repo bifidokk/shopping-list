@@ -27,11 +27,19 @@ class ShoppingListApiTest extends ApiTestCase
         $this->assertArrayHasKey('id', $shoppingList);
         $this->assertArrayHasKey('name', $shoppingList);
         $this->assertArrayHasKey('description', $shoppingList);
+        $this->assertArrayHasKey('isDefault', $shoppingList);
         $this->assertArrayHasKey('createdAt', $shoppingList);
         $this->assertArrayHasKey('updatedAt', $shoppingList);
+        $this->assertArrayHasKey('totalItems', $shoppingList);
+        $this->assertArrayHasKey('completedItems', $shoppingList);
 
         $this->assertSame('Test Shopping List', $shoppingList['name']);
         $this->assertSame('A test shopping list for integration tests', $shoppingList['description']);
+        $this->assertTrue($shoppingList['isDefault']);
+        $this->assertSame(2, $shoppingList['totalItems']);
+        $this->assertIsInt($shoppingList['completedItems']);
+        $this->assertGreaterThanOrEqual(0, $shoppingList['completedItems']);
+        $this->assertLessThanOrEqual(2, $shoppingList['completedItems']);
 
         $listFromDb = $this->entityManager
             ->getRepository(ShoppingList::class)
