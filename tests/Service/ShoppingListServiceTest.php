@@ -232,17 +232,29 @@ class ShoppingListServiceTest extends TestCase
         $currentDefault->setUser($this->user);
         $currentDefault->setIsDefault(true);
 
+        // Use reflection to set ID
+        $reflection = new \ReflectionClass($currentDefault);
+        $property = $reflection->getProperty('id');
+        $property->setAccessible(true);
+        $property->setValue($currentDefault, 1);
+
         $newDefault = new ShoppingList();
         $newDefault->setName('New Default');
         $newDefault->setUser($this->user);
         $newDefault->setIsDefault(false);
+
+        // Use reflection to set ID
+        $reflection = new \ReflectionClass($newDefault);
+        $property = $reflection->getProperty('id');
+        $property->setAccessible(true);
+        $property->setValue($newDefault, 2);
 
         $this->repository->expects($this->once())
             ->method('findUserDefaultList')
             ->with($this->user)
             ->willReturn($currentDefault);
 
-        $this->entityManager->expects($this->once())->method('flush');
+        $this->entityManager->expects($this->exactly(2))->method('flush');
 
         $result = $this->service->setAsDefault($newDefault);
 
@@ -257,10 +269,22 @@ class ShoppingListServiceTest extends TestCase
         $defaultList->setUser($this->user);
         $defaultList->setIsDefault(true);
 
+        // Use reflection to set ID
+        $reflection = new \ReflectionClass($defaultList);
+        $property = $reflection->getProperty('id');
+        $property->setAccessible(true);
+        $property->setValue($defaultList, 1);
+
         $nextList = new ShoppingList();
         $nextList->setName('Next List');
         $nextList->setUser($this->user);
         $nextList->setIsDefault(false);
+
+        // Use reflection to set ID
+        $reflection = new \ReflectionClass($nextList);
+        $property = $reflection->getProperty('id');
+        $property->setAccessible(true);
+        $property->setValue($nextList, 2);
 
         $this->repository->expects($this->once())
             ->method('findFirstNonDefaultList')

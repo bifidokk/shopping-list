@@ -89,17 +89,17 @@ class ShoppingListService
     {
         $user = $shoppingList->getUser();
 
-        // Unset current default list
+        // Unset current default list FIRST to avoid unique constraint violation
         $currentDefault = $this->shoppingListRepository->findUserDefaultList($user);
         if ($currentDefault && $currentDefault->getId() !== $shoppingList->getId()) {
             $currentDefault->setIsDefault(false);
             $currentDefault->setUpdatedAt(new \DateTime());
+            $this->entityManager->flush(); // Flush to remove old default before setting new one
         }
 
         // Set new default
         $shoppingList->setIsDefault(true);
         $shoppingList->setUpdatedAt(new \DateTime());
-
         $this->entityManager->flush();
 
         return $shoppingList;
