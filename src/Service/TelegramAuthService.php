@@ -27,6 +27,7 @@ class TelegramAuthService
         if ($this->isSafe($initData)) {
             parse_str(rawurldecode($initData), $data);
 
+            // @phpstan-ignore-next-line argument.type (parse_str creates array with string keys from URL query strings)
             return $this->checkAuthDate($data);
         }
 
@@ -44,6 +45,9 @@ class TelegramAuthService
         return strcmp($hash, $checksum) === 0;
     }
 
+    /**
+     * @return array{0: string, 1: string}
+     */
     private function convertInitData(string $initData): array
     {
         $initDataArray = explode('&', rawurldecode($initData));
@@ -62,7 +66,6 @@ class TelegramAuthService
 
         return [$hash, implode("\n", $initDataArray)];
     }
-
 
     /**
      * @param array<string, mixed> $data
@@ -85,7 +88,6 @@ class TelegramAuthService
             }
         }
 
-        // @phpstan-ignore-next-line parse_str creates array with string keys in this context
         return $data;
     }
 

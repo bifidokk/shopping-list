@@ -1197,12 +1197,6 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     }>,
  *     role_hierarchy?: array<string, string|list<scalar|null>>,
  * }
- * @psalm-type DamaDoctrineTestConfig = array{
- *     enable_static_connection?: mixed, // Default: true
- *     enable_static_meta_data_cache?: bool, // Default: true
- *     enable_static_query_cache?: bool, // Default: true
- *     connection_keys?: list<mixed>,
- * }
  * @psalm-type MonologConfig = array{
  *     use_microseconds?: scalar|null, // Default: true
  *     channels?: list<scalar|null>,
@@ -1373,6 +1367,12 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         forced_allow_origin_value?: scalar|null, // Default: null
  *         skip_same_as_origin?: bool,
  *     }>,
+ * }
+ * @psalm-type DamaDoctrineTestConfig = array{
+ *     enable_static_connection?: mixed, // Default: true
+ *     enable_static_meta_data_cache?: bool, // Default: true
+ *     enable_static_query_cache?: bool, // Default: true
+ *     connection_keys?: list<mixed>,
  * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,

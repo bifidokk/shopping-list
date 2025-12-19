@@ -390,6 +390,7 @@ class ShoppingListApiTest extends ApiTestCase
         foreach ($lists as $list) {
             if ($list['isDefault']) {
                 $defaultList = $list;
+
                 break;
             }
         }
