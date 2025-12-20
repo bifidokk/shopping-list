@@ -32,6 +32,21 @@ class ShoppingList
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private User $user;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Groups(['shopping_list:read'])]
+    private User $owner;
+
+    /**
+     * @var Collection<int, ListShare>
+     */
+    #[ORM\OneToMany(targetEntity: ListShare::class, mappedBy: 'shoppingList', cascade: ['remove'], orphanRemoval: true)]
+    private Collection $shares;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    #[Groups(['shopping_list:read'])]
+    private int $sharedWith = 0;
+
     /**
      * @var Collection<int, Item>
      */
@@ -54,6 +69,7 @@ class ShoppingList
     public function __construct()
     {
         $this->items = new ArrayCollection();
+        $this->shares = new ArrayCollection();
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
     }
@@ -137,6 +153,38 @@ class ShoppingList
     public function setUpdatedAt(\DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function getOwner(): User
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(User $owner): self
+    {
+        $this->owner = $owner;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ListShare>
+     */
+    public function getShares(): Collection
+    {
+        return $this->shares;
+    }
+
+    public function getSharedWith(): int
+    {
+        return $this->sharedWith;
+    }
+
+    public function setSharedWith(int $sharedWith): self
+    {
+        $this->sharedWith = $sharedWith;
 
         return $this;
     }

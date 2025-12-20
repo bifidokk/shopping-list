@@ -141,11 +141,8 @@ class ShoppingListServiceTest extends TestCase
         $expectedLists = [$list1, $list2];
 
         $this->repository->expects($this->once())
-            ->method('findBy')
-            ->with(
-                ['user' => $this->user],
-                ['updatedAt' => 'DESC']
-            )
+            ->method('findAllAccessibleByUser')
+            ->with($this->user)
             ->willReturn($expectedLists);
 
         $result = $this->service->findUserShoppingLists($this->user);
@@ -160,11 +157,13 @@ class ShoppingListServiceTest extends TestCase
         $shoppingList->setUser($this->user);
 
         $this->repository->expects($this->once())
-            ->method('findOneBy')
-            ->with([
-                'id' => 1,
-                'user' => $this->user,
-            ])
+            ->method('hasAccess')
+            ->with(1, $this->user)
+            ->willReturn(true);
+
+        $this->repository->expects($this->once())
+            ->method('find')
+            ->with(1)
             ->willReturn($shoppingList);
 
         $result = $this->service->findUserShoppingList(1, $this->user);
@@ -175,12 +174,12 @@ class ShoppingListServiceTest extends TestCase
     public function testFindUserShoppingListNotFound(): void
     {
         $this->repository->expects($this->once())
-            ->method('findOneBy')
-            ->with([
-                'id' => 999,
-                'user' => $this->user,
-            ])
-            ->willReturn(null);
+            ->method('hasAccess')
+            ->with(999, $this->user)
+            ->willReturn(false);
+
+        $this->repository->expects($this->never())
+            ->method('find');
 
         $result = $this->service->findUserShoppingList(999, $this->user);
 

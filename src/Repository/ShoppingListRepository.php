@@ -48,4 +48,52 @@ class ShoppingListRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * Find all lists accessible by user (owned or shared with them).
+     *
+     * @return ShoppingList[]
+     */
+    public function findAllAccessibleByUser(User $user): array
+    {
+        return $this->createQueryBuilder('sl')
+            ->leftJoin('sl.shares', 's')
+            ->where('sl.owner = :user')
+            ->orWhere('s.sharedWithUser = :user')
+            ->setParameter('user', $user)
+            ->groupBy('sl.id')
+            ->orderBy('sl.isDefault', 'DESC')
+            ->addOrderBy('sl.updatedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function hasAccess(int $listId, User $user): bool
+    {
+        $result = $this->createQueryBuilder('sl')
+            ->select('COUNT(sl.id)')
+            ->leftJoin('sl.shares', 's')
+            ->where('sl.id = :listId')
+            ->andWhere('(sl.owner = :user OR s.sharedWithUser = :user)')
+            ->setParameter('listId', $listId)
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result > 0;
+    }
+
+    public function isOwner(int $listId, User $user): bool
+    {
+        $result = $this->createQueryBuilder('sl')
+            ->select('COUNT(sl.id)')
+            ->where('sl.id = :listId')
+            ->andWhere('sl.owner = :user')
+            ->setParameter('listId', $listId)
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result > 0;
+    }
 }

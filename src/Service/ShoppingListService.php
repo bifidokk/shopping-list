@@ -25,6 +25,7 @@ class ShoppingListService
         $shoppingList->setName($dto->name);
         $shoppingList->setDescription($dto->description);
         $shoppingList->setUser($user);
+        $shoppingList->setOwner($user); // Set owner (initially same as creator)
 
         // Check if this is the user's first list
         $isFirstList = $this->shoppingListRepository->countUserLists($user) === 0;
@@ -71,18 +72,17 @@ class ShoppingListService
      */
     public function findUserShoppingLists(User $user): array
     {
-        return $this->shoppingListRepository->findBy(
-            ['user' => $user],
-            ['updatedAt' => 'DESC']
-        );
+        return $this->shoppingListRepository->findAllAccessibleByUser($user);
     }
 
     public function findUserShoppingList(int $id, User $user): ?ShoppingList
     {
-        return $this->shoppingListRepository->findOneBy([
-            'id' => $id,
-            'user' => $user,
-        ]);
+        // Check if user has access (owner OR collaborator)
+        if (!$this->shoppingListRepository->hasAccess($id, $user)) {
+            return null;
+        }
+
+        return $this->shoppingListRepository->find($id);
     }
 
     public function setAsDefault(ShoppingList $shoppingList): ShoppingList
@@ -103,6 +103,26 @@ class ShoppingListService
         $this->entityManager->flush();
 
         return $shoppingList;
+    }
+
+    public function canUserAccessList(ShoppingList $list, User $user): bool
+    {
+        $listId = $list->getId();
+        if ($listId === null) {
+            return false;
+        }
+
+        return $this->shoppingListRepository->hasAccess($listId, $user);
+    }
+
+    public function isUserOwner(ShoppingList $list, User $user): bool
+    {
+        $listId = $list->getId();
+        if ($listId === null) {
+            return false;
+        }
+
+        return $this->shoppingListRepository->isOwner($listId, $user);
     }
 
     private function promoteNextListToDefault(User $user): void

@@ -43,11 +43,11 @@ class ShoppingListController extends AbstractController
 
         $itemCounts = $this->itemRepository->getItemCountsForLists($lists);
 
-        $listDtos = array_map(function ($list) use ($itemCounts) {
+        $listDtos = array_map(function ($list) use ($itemCounts, $user) {
             $listId = $list->getId();
             $counts = $itemCounts[$listId] ?? ['total' => 0, 'completed' => 0];
 
-            return ShoppingListDto::fromEntity($list, $counts['total'], $counts['completed']);
+            return ShoppingListDto::fromEntity($list, $counts['total'], $counts['completed'], $user);
         }, $lists);
 
         $this->logger->debug('Shopping lists retrieved', [
@@ -197,6 +197,18 @@ class ShoppingListController extends AbstractController
             ], Response::HTTP_NOT_FOUND);
         }
 
+        // Only owner can delete
+        if (!$this->shoppingListService->isUserOwner($shoppingList, $user)) {
+            $this->logger->warning('Non-owner attempted to delete list', [
+                'user_id' => $user->getTelegramId(),
+                'shopping_list_id' => $id,
+            ]);
+
+            return $this->json([
+                'error' => 'Only the owner can delete this list',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $this->shoppingListService->deleteShoppingList($shoppingList);
 
         $this->logger->info('Shopping list deleted', [
@@ -226,6 +238,18 @@ class ShoppingListController extends AbstractController
             return $this->json([
                 'error' => 'Shopping list not found',
             ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Only owner can set default
+        if (!$this->shoppingListService->isUserOwner($shoppingList, $user)) {
+            $this->logger->warning('Non-owner attempted to set default', [
+                'user_id' => $user->getTelegramId(),
+                'shopping_list_id' => $id,
+            ]);
+
+            return $this->json([
+                'error' => 'Only the owner can set the default list',
+            ], Response::HTTP_FORBIDDEN);
         }
 
         // Skip if already default

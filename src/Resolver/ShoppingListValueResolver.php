@@ -47,10 +47,14 @@ class ShoppingListValueResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Shopping list not found');
         }
 
-        $shoppingList = $this->shoppingListRepository->findOneBy([
-            'id' => (int) $listId,
-            'user' => $user,
-        ]);
+        $listIdInt = (int) $listId;
+
+        // Check if user has access (owner OR collaborator)
+        if (!$this->shoppingListRepository->hasAccess($listIdInt, $user)) {
+            throw new NotFoundHttpException('Shopping list not found');
+        }
+
+        $shoppingList = $this->shoppingListRepository->find($listIdInt);
 
         if (!$shoppingList) {
             throw new NotFoundHttpException('Shopping list not found');
