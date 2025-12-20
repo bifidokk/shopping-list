@@ -25,7 +25,8 @@ class ShoppingListDto
         ShoppingList $shoppingList,
         int $totalItems = 0,
         int $completedItems = 0,
-        ?User $currentUser = null
+        ?User $currentUser = null,
+        ?int $userDefaultListId = null
     ): self {
         $id = $shoppingList->getId();
         if ($id === null) {
@@ -41,7 +42,8 @@ class ShoppingListDto
         $dto->id = $id;
         $dto->name = $shoppingList->getName();
         $dto->description = $shoppingList->getDescription();
-        $dto->isDefault = $shoppingList->isDefault();
+        // Compute isDefault based on whether this list is the user's default (per-user setting)
+        $dto->isDefault = $userDefaultListId !== null && $id === $userDefaultListId;
         $dto->ownerId = $ownerId;
         $dto->isOwner = $currentUser ? $ownerId === $currentUser->getId() : false;
         $dto->sharedWith = $shoppingList->getSharedWith();

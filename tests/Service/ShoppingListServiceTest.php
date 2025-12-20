@@ -9,6 +9,7 @@ use App\Dto\UpdateShoppingListDto;
 use App\Entity\ShoppingList;
 use App\Entity\User;
 use App\Repository\ShoppingListRepository;
+use App\Repository\UserDefaultListRepository;
 use App\Service\ShoppingListService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -17,6 +18,7 @@ class ShoppingListServiceTest extends TestCase
 {
     private EntityManagerInterface $entityManager;
     private ShoppingListRepository $repository;
+    private UserDefaultListRepository $userDefaultListRepository;
     private ShoppingListService $service;
     private User $user;
 
@@ -24,7 +26,12 @@ class ShoppingListServiceTest extends TestCase
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->repository = $this->createMock(ShoppingListRepository::class);
-        $this->service = new ShoppingListService($this->entityManager, $this->repository);
+        $this->userDefaultListRepository = $this->createMock(UserDefaultListRepository::class);
+        $this->service = new ShoppingListService(
+            $this->entityManager,
+            $this->repository,
+            $this->userDefaultListRepository
+        );
 
         $this->user = new User();
         $this->user->setTelegramId(123456789);
@@ -36,6 +43,15 @@ class ShoppingListServiceTest extends TestCase
         $dto->name = 'Test List';
         $dto->description = 'Test Description';
 
+        // Mock: user has no existing default (first list)
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('findByUser')
+            ->with($this->user)
+            ->willReturn(null);
+
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('setUserDefaultList');
+
         $this->entityManager->expects($this->once())
             ->method('persist')
             ->with($this->callback(function (ShoppingList $list) {
@@ -44,7 +60,7 @@ class ShoppingListServiceTest extends TestCase
                     && $list->getUser() === $this->user;
             }));
 
-        $this->entityManager->expects($this->once())
+        $this->entityManager->expects($this->exactly(2))
             ->method('flush');
 
         $result = $this->service->createShoppingList($dto, $this->user);
@@ -61,10 +77,19 @@ class ShoppingListServiceTest extends TestCase
         $dto->name = 'Test List';
         $dto->description = null;
 
+        // Mock: user has no existing default (first list)
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('findByUser')
+            ->with($this->user)
+            ->willReturn(null);
+
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('setUserDefaultList');
+
         $this->entityManager->expects($this->once())
             ->method('persist');
 
-        $this->entityManager->expects($this->once())
+        $this->entityManager->expects($this->exactly(2))
             ->method('flush');
 
         $result = $this->service->createShoppingList($dto, $this->user);
@@ -191,14 +216,17 @@ class ShoppingListServiceTest extends TestCase
         $dto = new CreateShoppingListDto();
         $dto->name = 'First List';
 
-        // Mock repository to return 0 lists (first list scenario)
-        $this->repository->expects($this->once())
-            ->method('countUserLists')
+        // User has no existing default (first list scenario)
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('findByUser')
             ->with($this->user)
-            ->willReturn(0);
+            ->willReturn(null);
+
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('setUserDefaultList');
 
         $this->entityManager->expects($this->once())->method('persist');
-        $this->entityManager->expects($this->once())->method('flush');
+        $this->entityManager->expects($this->exactly(2))->method('flush');
 
         $result = $this->service->createShoppingList($dto, $this->user);
 
@@ -210,11 +238,14 @@ class ShoppingListServiceTest extends TestCase
         $dto = new CreateShoppingListDto();
         $dto->name = 'Second List';
 
-        // Mock repository to return 1 existing list
-        $this->repository->expects($this->once())
-            ->method('countUserLists')
+        // User already has a default (not first list scenario)
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('findByUser')
             ->with($this->user)
-            ->willReturn(1);
+            ->willReturn($this->createMock(\App\Entity\UserDefaultList::class));
+
+        $this->userDefaultListRepository->expects($this->never())
+            ->method('setUserDefaultList');
 
         $this->entityManager->expects($this->once())->method('persist');
         $this->entityManager->expects($this->once())->method('flush');
@@ -226,17 +257,6 @@ class ShoppingListServiceTest extends TestCase
 
     public function testSetAsDefault(): void
     {
-        $currentDefault = new ShoppingList();
-        $currentDefault->setName('Current Default');
-        $currentDefault->setUser($this->user);
-        $currentDefault->setIsDefault(true);
-
-        // Use reflection to set ID
-        $reflection = new \ReflectionClass($currentDefault);
-        $property = $reflection->getProperty('id');
-        $property->setAccessible(true);
-        $property->setValue($currentDefault, 1);
-
         $newDefault = new ShoppingList();
         $newDefault->setName('New Default');
         $newDefault->setUser($this->user);
@@ -248,75 +268,14 @@ class ShoppingListServiceTest extends TestCase
         $property->setAccessible(true);
         $property->setValue($newDefault, 2);
 
-        $this->repository->expects($this->once())
-            ->method('findUserDefaultList')
-            ->with($this->user)
-            ->willReturn($currentDefault);
-
-        $this->entityManager->expects($this->exactly(2))->method('flush');
-
-        $result = $this->service->setAsDefault($newDefault);
-
-        $this->assertTrue($result->isDefault());
-        $this->assertFalse($currentDefault->isDefault());
-    }
-
-    public function testDeleteDefaultListPromotesNext(): void
-    {
-        $defaultList = new ShoppingList();
-        $defaultList->setName('Default List');
-        $defaultList->setUser($this->user);
-        $defaultList->setIsDefault(true);
-
-        // Use reflection to set ID
-        $reflection = new \ReflectionClass($defaultList);
-        $property = $reflection->getProperty('id');
-        $property->setAccessible(true);
-        $property->setValue($defaultList, 1);
-
-        $nextList = new ShoppingList();
-        $nextList->setName('Next List');
-        $nextList->setUser($this->user);
-        $nextList->setIsDefault(false);
-
-        // Use reflection to set ID
-        $reflection = new \ReflectionClass($nextList);
-        $property = $reflection->getProperty('id');
-        $property->setAccessible(true);
-        $property->setValue($nextList, 2);
-
-        $this->repository->expects($this->once())
-            ->method('findFirstNonDefaultList')
-            ->with($this->user)
-            ->willReturn($nextList);
-
-        $this->entityManager->expects($this->once())
-            ->method('remove')
-            ->with($defaultList);
-
-        $this->entityManager->expects($this->exactly(2))->method('flush');
-
-        $this->service->deleteShoppingList($defaultList);
-
-        $this->assertTrue($nextList->isDefault());
-    }
-
-    public function testDeleteNonDefaultListDoesNotPromote(): void
-    {
-        $nonDefaultList = new ShoppingList();
-        $nonDefaultList->setName('Non-Default List');
-        $nonDefaultList->setUser($this->user);
-        $nonDefaultList->setIsDefault(false);
-
-        $this->repository->expects($this->never())
-            ->method('findFirstNonDefaultList');
-
-        $this->entityManager->expects($this->once())
-            ->method('remove')
-            ->with($nonDefaultList);
+        $this->userDefaultListRepository->expects($this->once())
+            ->method('setUserDefaultList')
+            ->with($this->user, $newDefault);
 
         $this->entityManager->expects($this->once())->method('flush');
 
-        $this->service->deleteShoppingList($nonDefaultList);
+        $result = $this->service->setAsDefault($newDefault, $this->user);
+
+        $this->assertSame($newDefault, $result);
     }
 }

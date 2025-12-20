@@ -43,11 +43,14 @@ class ShoppingListController extends AbstractController
 
         $itemCounts = $this->itemRepository->getItemCountsForLists($lists);
 
-        $listDtos = array_map(function ($list) use ($itemCounts, $user) {
+        // Get user's default list ID for computing isDefault per user
+        $userDefaultListId = $this->shoppingListService->getUserDefaultListId($user);
+
+        $listDtos = array_map(function ($list) use ($itemCounts, $user, $userDefaultListId) {
             $listId = $list->getId();
             $counts = $itemCounts[$listId] ?? ['total' => 0, 'completed' => 0];
 
-            return ShoppingListDto::fromEntity($list, $counts['total'], $counts['completed'], $user);
+            return ShoppingListDto::fromEntity($list, $counts['total'], $counts['completed'], $user, $userDefaultListId);
         }, $lists);
 
         $this->logger->debug('Shopping lists retrieved', [
@@ -240,21 +243,10 @@ class ShoppingListController extends AbstractController
             ], Response::HTTP_NOT_FOUND);
         }
 
-        // Only owner can set default
-        if (!$this->shoppingListService->isUserOwner($shoppingList, $user)) {
-            $this->logger->warning('Non-owner attempted to set default', [
-                'user_id' => $user->getTelegramId(),
-                'shopping_list_id' => $id,
-            ]);
-
-            return $this->json([
-                'error' => 'Only the owner can set the default list',
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        // Skip if already default
-        if ($shoppingList->isDefault()) {
-            $this->logger->debug('Shopping list is already default', [
+        // Check if already default for this user
+        $currentDefaultId = $this->shoppingListService->getUserDefaultListId($user);
+        if ($currentDefaultId === $id) {
+            $this->logger->debug('Shopping list is already default for this user', [
                 'user_id' => $user->getTelegramId(),
                 'shopping_list_id' => $id,
             ]);
@@ -264,9 +256,10 @@ class ShoppingListController extends AbstractController
             ]);
         }
 
-        $shoppingList = $this->shoppingListService->setAsDefault($shoppingList);
+        // Set as default for the current user (owner OR collaborator can set their own default)
+        $shoppingList = $this->shoppingListService->setAsDefault($shoppingList, $user);
 
-        $this->logger->info('Shopping list set as default', [
+        $this->logger->info('Shopping list set as default for user', [
             'user_id' => $user->getTelegramId(),
             'shopping_list_id' => $id,
         ]);

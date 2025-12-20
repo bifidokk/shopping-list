@@ -9,13 +9,15 @@ use App\Dto\UpdateShoppingListDto;
 use App\Entity\ShoppingList;
 use App\Entity\User;
 use App\Repository\ShoppingListRepository;
+use App\Repository\UserDefaultListRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ShoppingListService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private ShoppingListRepository $shoppingListRepository
+        private ShoppingListRepository $shoppingListRepository,
+        private UserDefaultListRepository $userDefaultListRepository
     ) {
     }
 
@@ -27,12 +29,18 @@ class ShoppingListService
         $shoppingList->setUser($user);
         $shoppingList->setOwner($user); // Set owner (initially same as creator)
 
-        // Check if this is the user's first list
-        $isFirstList = $this->shoppingListRepository->countUserLists($user) === 0;
-        $shoppingList->setIsDefault($isFirstList);
+        // Check if this is the user's first accessible list (owned or shared)
+        $hasExistingDefault = $this->userDefaultListRepository->findByUser($user) !== null;
+        $shoppingList->setIsDefault(!$hasExistingDefault);
 
         $this->entityManager->persist($shoppingList);
         $this->entityManager->flush();
+
+        // If this is the user's first list, set it as their default in user_default_lists
+        if (!$hasExistingDefault) {
+            $this->userDefaultListRepository->setUserDefaultList($user, $shoppingList);
+            $this->entityManager->flush();
+        }
 
         return $shoppingList;
     }
@@ -55,16 +63,14 @@ class ShoppingListService
 
     public function deleteShoppingList(ShoppingList $shoppingList): void
     {
-        $wasDefault = $shoppingList->isDefault();
-        $user = $shoppingList->getUser();
+        $listId = $shoppingList->getId();
 
         $this->entityManager->remove($shoppingList);
         $this->entityManager->flush();
 
-        // If we deleted the default list, promote another list
-        if ($wasDefault) {
-            $this->promoteNextListToDefault($user);
-        }
+        // Note: CASCADE DELETE will automatically remove user_default_lists entries
+        // where shopping_list_id matches this list. Users who had this as default
+        // will need to select a new default list manually.
     }
 
     /**
@@ -85,20 +91,10 @@ class ShoppingListService
         return $this->shoppingListRepository->find($id);
     }
 
-    public function setAsDefault(ShoppingList $shoppingList): ShoppingList
+    public function setAsDefault(ShoppingList $shoppingList, User $user): ShoppingList
     {
-        $user = $shoppingList->getUser();
-
-        // Unset current default list FIRST to avoid unique constraint violation
-        $currentDefault = $this->shoppingListRepository->findUserDefaultList($user);
-        if ($currentDefault && $currentDefault->getId() !== $shoppingList->getId()) {
-            $currentDefault->setIsDefault(false);
-            $currentDefault->setUpdatedAt(new \DateTime());
-            $this->entityManager->flush(); // Flush to remove old default before setting new one
-        }
-
-        // Set new default
-        $shoppingList->setIsDefault(true);
+        // Set the user's default list in user_default_lists table
+        $this->userDefaultListRepository->setUserDefaultList($user, $shoppingList);
         $shoppingList->setUpdatedAt(new \DateTime());
         $this->entityManager->flush();
 
@@ -125,15 +121,8 @@ class ShoppingListService
         return $this->shoppingListRepository->isOwner($listId, $user);
     }
 
-    private function promoteNextListToDefault(User $user): void
+    public function getUserDefaultListId(User $user): ?int
     {
-        // Find the first remaining list (oldest created)
-        $nextList = $this->shoppingListRepository->findFirstNonDefaultList($user);
-
-        if ($nextList) {
-            $nextList->setIsDefault(true);
-            $nextList->setUpdatedAt(new \DateTime());
-            $this->entityManager->flush();
-        }
+        return $this->userDefaultListRepository->findDefaultListIdForUser($user);
     }
 }
