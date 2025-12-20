@@ -95,9 +95,23 @@ class ShoppingListController extends AbstractController
             'name' => $shoppingList->getName(),
         ]);
 
-        return $this->json($shoppingList, Response::HTTP_CREATED, [], [
-            'groups' => ['shopping_list:read'],
-        ]);
+        // Get user's default list ID for computing isDefault
+        $userDefaultListId = $this->shoppingListService->getUserDefaultListId($user);
+
+        // Get item counts
+        $itemCounts = $this->itemRepository->getItemCountsForLists([$shoppingList]);
+        $listId = $shoppingList->getId();
+        $counts = $itemCounts[$listId] ?? ['total' => 0, 'completed' => 0];
+
+        $responseDto = ShoppingListDto::fromEntity(
+            $shoppingList,
+            $counts['total'],
+            $counts['completed'],
+            $user,
+            $userDefaultListId
+        );
+
+        return $this->json($responseDto, Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', methods: ['GET'])]
@@ -174,9 +188,23 @@ class ShoppingListController extends AbstractController
             'shopping_list_id' => $id,
         ]);
 
-        return $this->json($shoppingList, Response::HTTP_OK, [], [
-            'groups' => ['shopping_list:read'],
-        ]);
+        // Get user's default list ID for computing isDefault
+        $userDefaultListId = $this->shoppingListService->getUserDefaultListId($user);
+
+        // Get item counts
+        $itemCounts = $this->itemRepository->getItemCountsForLists([$shoppingList]);
+        $listId = $shoppingList->getId();
+        $counts = $itemCounts[$listId] ?? ['total' => 0, 'completed' => 0];
+
+        $responseDto = ShoppingListDto::fromEntity(
+            $shoppingList,
+            $counts['total'],
+            $counts['completed'],
+            $user,
+            $userDefaultListId
+        );
+
+        return $this->json($responseDto, Response::HTTP_OK);
     }
 
     #[Route('/{id}', methods: ['DELETE'])]
@@ -244,16 +272,27 @@ class ShoppingListController extends AbstractController
         }
 
         // Check if already default for this user
-        $currentDefaultId = $this->shoppingListService->getUserDefaultListId($user);
-        if ($currentDefaultId === $id) {
+        $userDefaultListId = $this->shoppingListService->getUserDefaultListId($user);
+        if ($userDefaultListId === $id) {
             $this->logger->debug('Shopping list is already default for this user', [
                 'user_id' => $user->getTelegramId(),
                 'shopping_list_id' => $id,
             ]);
 
-            return $this->json($shoppingList, Response::HTTP_OK, [], [
-                'groups' => ['shopping_list:read'],
-            ]);
+            // Get item counts and return DTO
+            $itemCounts = $this->itemRepository->getItemCountsForLists([$shoppingList]);
+            $listId = $shoppingList->getId();
+            $counts = $itemCounts[$listId] ?? ['total' => 0, 'completed' => 0];
+
+            $responseDto = ShoppingListDto::fromEntity(
+                $shoppingList,
+                $counts['total'],
+                $counts['completed'],
+                $user,
+                $userDefaultListId
+            );
+
+            return $this->json($responseDto, Response::HTTP_OK);
         }
 
         // Set as default for the current user (owner OR collaborator can set their own default)
@@ -264,8 +303,20 @@ class ShoppingListController extends AbstractController
             'shopping_list_id' => $id,
         ]);
 
-        return $this->json($shoppingList, Response::HTTP_OK, [], [
-            'groups' => ['shopping_list:read'],
-        ]);
+        // Get updated default ID and item counts
+        $userDefaultListId = $this->shoppingListService->getUserDefaultListId($user);
+        $itemCounts = $this->itemRepository->getItemCountsForLists([$shoppingList]);
+        $listId = $shoppingList->getId();
+        $counts = $itemCounts[$listId] ?? ['total' => 0, 'completed' => 0];
+
+        $responseDto = ShoppingListDto::fromEntity(
+            $shoppingList,
+            $counts['total'],
+            $counts['completed'],
+            $user,
+            $userDefaultListId
+        );
+
+        return $this->json($responseDto, Response::HTTP_OK);
     }
 }

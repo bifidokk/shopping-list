@@ -416,7 +416,7 @@ class ShoppingListApiTest extends ApiTestCase
         $this->assertTrue($data['isDefault']);
     }
 
-    public function testDeleteDefaultListPromotesAnother(): void
+    public function testDeleteDefaultListRemovesDefault(): void
     {
         // Create two lists
         $response1 = $this->makeAuthenticatedRequest(
@@ -446,7 +446,8 @@ class ShoppingListApiTest extends ApiTestCase
         );
         $this->assertSame(204, $response->getStatusCode());
 
-        // Verify second list became default
+        // Verify second list is NOT automatically promoted to default
+        // User must manually select a new default
         $response = $this->makeAuthenticatedRequest(
             'GET',
             "/api/shopping-lists/{$list2['id']}",
@@ -454,7 +455,7 @@ class ShoppingListApiTest extends ApiTestCase
             UserFixtures::USER_TELEGRAM_ID + 200
         );
         $updatedList2 = $this->assertJsonResponse($response, 200);
-        $this->assertTrue($updatedList2['isDefault']);
+        $this->assertFalse($updatedList2['isDefault']);
     }
 
     public function testDeleteLastListWorks(): void

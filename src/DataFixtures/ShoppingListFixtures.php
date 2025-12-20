@@ -6,6 +6,7 @@ namespace App\DataFixtures;
 
 use App\Entity\ShoppingList;
 use App\Entity\User;
+use App\Entity\UserDefaultList;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -29,6 +30,14 @@ class ShoppingListFixtures extends Fixture implements DependentFixtureInterface,
         $manager->persist($shoppingList);
 
         $this->addReference(self::SHOPPING_LIST_REFERENCE, $shoppingList);
+
+        $manager->flush();
+
+        // Create user_default_lists entry so this list shows as default for the user
+        $userDefault = new UserDefaultList();
+        $userDefault->setUser($user);
+        $userDefault->setShoppingList($shoppingList);
+        $manager->persist($userDefault);
 
         $manager->flush();
     }
