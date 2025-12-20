@@ -75,4 +75,15 @@ class ItemRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function findOneByNameAndList(string $name, ShoppingList $shoppingList): ?Item
+    {
+        return $this->createQueryBuilder('i')
+            ->where('LOWER(i.name) = LOWER(:name)')
+            ->andWhere('i.shoppingList = :list')
+            ->setParameter('name', $name)
+            ->setParameter('list', $shoppingList)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

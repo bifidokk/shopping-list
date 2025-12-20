@@ -101,4 +101,27 @@ class ItemService
             'shoppingList' => $shoppingList,
         ]);
     }
+
+    public function addItemIfNotExists(string $itemName, ShoppingList $shoppingList): ?Item
+    {
+        $existingItem = $this->itemRepository->findOneByNameAndList($itemName, $shoppingList);
+
+        if ($existingItem) {
+            return null;
+        }
+
+        $item = new Item();
+        $item->setName($itemName);
+        $item->setQuantity(1);
+        $item->setUnit(null);
+        $item->setNotes(null);
+        $item->setIsDone(false);
+        $item->setShoppingList($shoppingList);
+
+        $this->entityManager->persist($item);
+        $shoppingList->setUpdatedAt(new \DateTime());
+        $this->entityManager->flush();
+
+        return $item;
+    }
 }

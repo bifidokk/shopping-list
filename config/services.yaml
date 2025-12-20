@@ -25,3 +25,11 @@ services:
     App\Service\TelegramAuthService:
         arguments:
             $botToken: '%env(TELEGRAM_BOT_TOKEN)%'
+
+    App\Command\TelegramSetWebhookCommand:
+        arguments:
+            $botToken: '%env(TELEGRAM_BOT_TOKEN)%'
+
+    App\Service\TelegramWebhookService:
+        arguments:
+            $botToken: '%env(TELEGRAM_BOT_TOKEN)%'

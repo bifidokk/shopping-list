@@ -24,6 +24,8 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
+        # Allow public access to Telegram webhook (Telegram servers call this, not authenticated users)
+        - { path: ^/api/telegram/webhook, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
 when@test:
