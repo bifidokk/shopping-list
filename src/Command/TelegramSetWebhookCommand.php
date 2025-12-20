@@ -45,12 +45,13 @@ class TelegramSetWebhookCommand extends Command
 
         if (!str_starts_with($webhookUrl, 'https://')) {
             $io->error('Webhook URL must use HTTPS protocol');
+
             return Command::FAILURE;
         }
 
         $io->section('Setting Telegram Webhook');
         $io->text([
-            "Bot Token: " . substr($this->botToken, 0, 10) . '...',
+            'Bot Token: '.substr($this->botToken, 0, 10).'...',
             "Webhook URL: {$webhookUrl}",
             "Allowed Updates: {$allowedUpdates}",
             "Max Connections: {$maxConnections}",
@@ -63,7 +64,7 @@ class TelegramSetWebhookCommand extends Command
                 [
                     'json' => [
                         'url' => $webhookUrl,
-                        'allowed_updates' => json_decode($allowedUpdates),
+                        'allowed_updates' => json_decode($allowedUpdates ?? '[]'),
                         'max_connections' => $maxConnections,
                     ],
                 ]
@@ -75,14 +76,18 @@ class TelegramSetWebhookCommand extends Command
             if ($statusCode === 200 && $content['ok'] === true) {
                 $io->success('Webhook successfully registered!');
                 $io->text("Description: {$content['description']}");
+
                 return Command::SUCCESS;
             } else {
                 $io->error('Failed to set webhook');
-                $io->text(json_encode($content, JSON_PRETTY_PRINT));
+                $encodedContent = json_encode($content, JSON_PRETTY_PRINT);
+                $io->text($encodedContent !== false ? $encodedContent : 'Unable to encode response');
+
                 return Command::FAILURE;
             }
         } catch (\Exception $e) {
-            $io->error('Error setting webhook: ' . $e->getMessage());
+            $io->error('Error setting webhook: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }

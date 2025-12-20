@@ -7,11 +7,15 @@ namespace App\Service;
 class MessageParserService
 {
     /**
-     * @return string[] Array of item names
+     * @return list<string> Array of item names
      */
     public function parseItems(string $text): array
     {
         $lines = preg_split('/\r?\n/', $text);
+
+        if ($lines === false) {
+            return [];
+        }
 
         $items = [];
         foreach ($lines as $line) {

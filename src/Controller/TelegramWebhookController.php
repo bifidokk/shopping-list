@@ -44,17 +44,20 @@ class TelegramWebhookController extends AbstractController
 
             if (!$message) {
                 $this->logger->debug('No message in webhook payload');
+
                 return $this->json(['ok' => true], Response::HTTP_OK);
             }
 
             // Validate message has required fields
             if (!$message->text || trim($message->text) === '') {
                 $this->logger->debug('Message has no text');
+
                 return $this->json(['ok' => true], Response::HTTP_OK);
             }
 
             if (!$message->from) {
                 $this->logger->warning('Message has no from user');
+
                 return $this->json(['ok' => true], Response::HTTP_OK);
             }
 
@@ -62,7 +65,7 @@ class TelegramWebhookController extends AbstractController
             $result = $this->webhookService->processMessage($message);
 
             // Send confirmation message if needed
-            if ($result['should_respond']) {
+            if ($result['should_respond'] && $message->chat !== null) {
                 $this->webhookService->sendConfirmationMessage($message->chat->id, $result);
             }
 

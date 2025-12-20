@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Dto\CreateShoppingListDto;
 use App\Dto\TelegramMessageDto;
+use App\Dto\TelegramUserDto;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,20 +25,36 @@ class TelegramWebhookService
     ) {
     }
 
+    /**
+     * @return array{added_count: int, total_parsed: int, total_users: int, chat_type: string, should_respond: bool}
+     */
     public function processMessage(TelegramMessageDto $message): array
     {
         $telegramUser = $message->from;
-        $chatType = $message->chat->type ?? 'private';
-        $chatId = $message->chat->id;
 
-        $itemNames = $this->messageParserService->parseItems($message->text);
-
-        if (empty($itemNames)) {
-            $this->logger->debug('No items parsed from message');
+        if ($message->chat === null) {
             return [
                 'added_count' => 0,
                 'total_parsed' => 0,
                 'total_users' => 0,
+                'chat_type' => 'private',
+                'should_respond' => false,
+            ];
+        }
+
+        $chatType = $message->chat->type ?? 'private';
+        $chatId = $message->chat->id;
+
+        $itemNames = $this->messageParserService->parseItems($message->text ?? '');
+
+        if (empty($itemNames)) {
+            $this->logger->debug('No items parsed from message');
+
+            return [
+                'added_count' => 0,
+                'total_parsed' => 0,
+                'total_users' => 0,
+                'chat_type' => $chatType,
                 'should_respond' => false,
             ];
         }
@@ -61,6 +78,10 @@ class TelegramWebhookService
             ]);
 
             foreach ($groupMembers as $member) {
+                if (!isset($member['user']['id'])) {
+                    continue;
+                }
+
                 $user = $this->userRepository->findOneBy(['telegramId' => $member['user']['id']]);
 
                 if ($user) {
@@ -70,6 +91,16 @@ class TelegramWebhookService
             }
         } else {
             $totalUsers = 1;
+
+            if ($telegramUser === null) {
+                return [
+                    'added_count' => 0,
+                    'total_parsed' => count($itemNames),
+                    'total_users' => 0,
+                    'chat_type' => $chatType,
+                    'should_respond' => false,
+                ];
+            }
 
             $user = $this->userRepository->findOneBy(['telegramId' => $telegramUser->id]);
 
@@ -97,6 +128,9 @@ class TelegramWebhookService
         ];
     }
 
+    /**
+     * @param array{added_count: int, total_parsed: int, total_users: int, chat_type: string, should_respond: bool} $processResult
+     */
     public function sendConfirmationMessage(int $chatId, array $processResult): void
     {
         $message = $this->buildConfirmationMessage(
@@ -109,7 +143,7 @@ class TelegramWebhookService
         $this->sendTelegramMessage($chatId, $message);
     }
 
-    private function createUser(object $telegramUser): User
+    private function createUser(TelegramUserDto $telegramUser): User
     {
         $this->logger->info('Creating new user', [
             'telegram_id' => $telegramUser->id,
@@ -128,6 +162,9 @@ class TelegramWebhookService
         return $user;
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     private function getGroupMembers(int $chatId): array
     {
         try {
@@ -149,6 +186,7 @@ class TelegramWebhookService
                 $this->logger->error('Failed to get group administrators', [
                     'chat_id' => $chatId,
                 ]);
+
                 return [];
             }
 
@@ -164,15 +202,19 @@ class TelegramWebhookService
                 'chat_id' => $chatId,
                 'error' => $e->getMessage(),
             ]);
+
             return [];
         }
     }
 
+    /**
+     * @param list<string> $itemNames
+     */
     private function addItemsToUserDefaultList(User $user, array $itemNames): int
     {
         $defaultListId = $this->shoppingListService->getUserDefaultListId($user);
 
-        if (!$defaultListId) {
+        if ($defaultListId === null) {
             $this->logger->info('Creating default shopping list for user', [
                 'user_id' => $user->getTelegramId(),
             ]);
@@ -185,6 +227,14 @@ class TelegramWebhookService
             $defaultListId = $defaultList->getId();
         }
 
+        if ($defaultListId === null) {
+            $this->logger->error('Failed to get or create default shopping list', [
+                'user_id' => $user->getTelegramId(),
+            ]);
+
+            return 0;
+        }
+
         $shoppingList = $this->shoppingListService->findUserShoppingList($defaultListId, $user);
 
         if (!$shoppingList) {
@@ -192,6 +242,7 @@ class TelegramWebhookService
                 'user_id' => $user->getTelegramId(),
                 'list_id' => $defaultListId,
             ]);
+
             return 0;
         }
 
@@ -199,7 +250,7 @@ class TelegramWebhookService
         foreach ($itemNames as $itemName) {
             $item = $this->itemService->addItemIfNotExists($itemName, $shoppingList);
             if ($item !== null) {
-                $addedCount++;
+                ++$addedCount;
             }
         }
 
@@ -246,23 +297,24 @@ class TelegramWebhookService
 
         if ($addedCount === 0) {
             if ($totalParsed === 0) {
-                return "No items found in your message. Try sending items like:\n\n" .
-                       "milk\n" .
-                       "bread\n" .
-                       "eggs";
+                return "No items found in your message. Try sending items like:\n\n".
+                       "milk\n".
+                       "bread\n".
+                       'eggs';
             }
 
             $listText = $isGroup ? 'shopping lists' : 'shopping list';
+
             return "All items are already in your {$listText}!";
         }
 
         if ($isGroup) {
             $message = $addedCount === 1
-                ? "✅ Added <b>1 item</b> to shopping lists!"
+                ? '✅ Added <b>1 item</b> to shopping lists!'
                 : "✅ Added <b>{$addedCount} items</b> to shopping lists!";
         } else {
             $message = $addedCount === 1
-                ? "✅ Added <b>1 item</b> to your shopping list!"
+                ? '✅ Added <b>1 item</b> to your shopping list!'
                 : "✅ Added <b>{$addedCount} items</b> to your shopping list!";
         }
 
