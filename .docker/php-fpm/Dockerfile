@@ -33,8 +33,9 @@ COPY . /var/www
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/var
+# Create var directories and set permissions
+RUN mkdir -p /var/www/var/cache /var/www/var/log /var/www/var/sessions \
+    && chown -R www-data:www-data /var/www/var
 
 # Configure PHP for production
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
@@ -42,12 +43,13 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 # Configure PHP-FPM
 COPY .docker/php-fpm/www.conf /usr/local/etc/php-fpm.d/www.conf
 
+# Remove dev-only files
+RUN rm -rf tests src/DataFixtures
+
 # Optimize for production
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 
-# Clear cache
-RUN php bin/console cache:clear --env=prod --no-debug
-RUN php bin/console cache:warmup --env=prod --no-debug
+# Cache will be cleared and warmed up on container start via deployment script
 
 EXPOSE 9000
 
