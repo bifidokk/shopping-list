@@ -13,7 +13,7 @@ services:
 
   php:
     container_name: shopping_list_php
-    image: ${DOCKERHUB_USERNAME}/shopping-list:latest
+    image: bifidokk/shopping-list:latest
     env_file: php_service.env
     depends_on:
       - db
@@ -22,7 +22,7 @@ services:
 
   nginx:
     container_name: shopping_list_nginx
-    image: ${DOCKERHUB_USERNAME}/shopping-list-nginx:latest
+    image: bifidokk/shopping-list-nginx:latest
     ports:
       - "${NGINX_PORT}:80"
     depends_on:
