@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  db:
+    container_name: shopping_list_db
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+    volumes:
+      - ./db:/var/lib/postgresql/data:rw
+
+  php:
+    container_name: shopping_list_php
+    image: ${DOCKERHUB_USERNAME}/shopping-list:latest
+    env_file: php_service.env
+    depends_on:
+      - db
+    volumes:
+      - shopping_list_app:/var/www
+
+  nginx:
+    container_name: shopping_list_nginx
+    image: ${DOCKERHUB_USERNAME}/shopping-list-nginx:latest
+    ports:
+      - "${NGINX_PORT}:80"
+    depends_on:
+      - php
+    volumes:
+      - ./logs/nginx:/var/log/nginx:cached
+      - shopping_list_app:/var/www
+
+volumes:
+  shopping_list_app:
