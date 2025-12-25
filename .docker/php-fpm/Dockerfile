@@ -40,7 +40,7 @@ RUN chown -R www-data:www-data /var/www/var
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # Configure PHP-FPM
-COPY ./.docker/php-fpm/www.conf /usr/local/etc/php-fpm.d/www.conf
+COPY .docker/php-fpm/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 # Optimize for production
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev

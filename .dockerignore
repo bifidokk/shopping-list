@@ -19,7 +19,12 @@
 ###< symfony/phpunit-bridge ###
 
 # Docker
-.docker
+.docker/docker-compose.yml
+.docker/.env.*
+.docker/db
+.docker/logs
+!.docker/php-fpm
+!.docker/nginx
 *.log
 
 # Git
