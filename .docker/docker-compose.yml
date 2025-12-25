@@ -3,7 +3,7 @@ version: '3.9'
 services:
   db:
     container_name: shopping_list_db
-    image: postgres:16-alpine
+    image: postgres:14.1
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
