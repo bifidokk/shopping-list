@@ -104,6 +104,15 @@
             "bin/phpunit"
         ]
     },
+    "sentry/sentry-symfony": {
+        "version": "5.8",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "5.0",
+            "ref": "b6cb4b34429dadecd7187852123be19d628fa37a"
+        }
+    },
     "symfony/console": {
         "version": "8.0",
         "recipe": {

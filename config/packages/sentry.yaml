@@ -1,0 +1,29 @@
+sentry:
+    dsn: '%env(SENTRY_DSN)%'
+    tracing:
+        enabled: false
+        http_client:
+            enabled: false
+    options:
+        environment: '%env(APP_ENV)%'
+
+when@prod:
+    sentry:
+        tracing:
+            enabled: true
+        options:
+            # Enable performance monitoring in production (20% sample rate)
+            traces_sample_rate: 0.2
+
+when@dev:
+    sentry:
+        tracing:
+            enabled: false
+        options:
+            # Disable performance monitoring in development
+            traces_sample_rate: 0
+
+when@test:
+    sentry:
+        # Completely disable Sentry in test environment
+        dsn: null
