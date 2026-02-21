@@ -64,9 +64,9 @@ class TelegramWebhookController extends AbstractController
             // Process message through service layer
             $result = $this->webhookService->processMessage($message);
 
-            // Send confirmation message if needed
+            // React to the message if items were processed
             if ($result['should_respond'] && $message->chat !== null) {
-                $this->webhookService->sendConfirmationMessage($message->chat->id, $result);
+                $this->webhookService->setMessageReaction($message->chat->id, $message->message_id);
             }
 
             return $this->json(['ok' => true], Response::HTTP_OK);

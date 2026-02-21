@@ -128,19 +128,42 @@ class TelegramWebhookService
         ];
     }
 
-    /**
-     * @param array{added_count: int, total_parsed: int, total_users: int, chat_type: string, should_respond: bool} $processResult
-     */
-    public function sendConfirmationMessage(int $chatId, array $processResult): void
+    public function setMessageReaction(int $chatId, int $messageId): void
     {
-        $message = $this->buildConfirmationMessage(
-            $processResult['added_count'],
-            $processResult['total_parsed'],
-            $processResult['total_users'],
-            $processResult['chat_type']
-        );
+        try {
+            $url = "https://api.telegram.org/bot{$this->botToken}/setMessageReaction";
+            $data = json_encode([
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'reaction' => [
+                    ['type' => 'emoji', 'emoji' => '✍'],
+                ],
+            ]);
 
-        $this->sendTelegramMessage($chatId, $message);
+            $options = [
+                'http' => [
+                    'method' => 'POST',
+                    'header' => 'Content-Type: application/json',
+                    'content' => $data,
+                ],
+            ];
+
+            $context = stream_context_create($options);
+            $result = file_get_contents($url, false, $context);
+
+            if ($result === false) {
+                $this->logger->error('Failed to set message reaction', [
+                    'chat_id' => $chatId,
+                    'message_id' => $messageId,
+                ]);
+            }
+        } catch (\Exception $e) {
+            $this->logger->error('Error setting message reaction', [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function createUser(TelegramUserDto $telegramUser): User
@@ -257,74 +280,4 @@ class TelegramWebhookService
         return $addedCount;
     }
 
-    private function sendTelegramMessage(int $chatId, string $text): void
-    {
-        try {
-            $url = "https://api.telegram.org/bot{$this->botToken}/sendMessage";
-            $data = json_encode([
-                'chat_id' => $chatId,
-                'text' => $text,
-                'parse_mode' => 'HTML',
-            ]);
-
-            $options = [
-                'http' => [
-                    'method' => 'POST',
-                    'header' => 'Content-Type: application/json',
-                    'content' => $data,
-                ],
-            ];
-
-            $context = stream_context_create($options);
-            $result = file_get_contents($url, false, $context);
-
-            if ($result === false) {
-                $this->logger->error('Failed to send Telegram message', [
-                    'chat_id' => $chatId,
-                ]);
-            }
-        } catch (\Exception $e) {
-            $this->logger->error('Error sending Telegram message', [
-                'chat_id' => $chatId,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    private function buildConfirmationMessage(int $addedCount, int $totalParsed, int $totalUsers, string $chatType): string
-    {
-        $isGroup = in_array($chatType, ['group', 'supergroup'], true);
-
-        if ($addedCount === 0) {
-            if ($totalParsed === 0) {
-                return "No items found in your message. Try sending items like:\n\n".
-                       "milk\n".
-                       "bread\n".
-                       'eggs';
-            }
-
-            $listText = $isGroup ? 'shopping lists' : 'shopping list';
-
-            return "All items are already in your {$listText}!";
-        }
-
-        if ($isGroup) {
-            $message = $addedCount === 1
-                ? '✅ Added <b>1 item</b> to shopping lists!'
-                : "✅ Added <b>{$addedCount} items</b> to shopping lists!";
-        } else {
-            $message = $addedCount === 1
-                ? '✅ Added <b>1 item</b> to your shopping list!'
-                : "✅ Added <b>{$addedCount} items</b> to your shopping list!";
-        }
-
-        if ($addedCount < $totalParsed) {
-            $skippedCount = $totalParsed - $addedCount;
-            $message .= $skippedCount === 1
-                ? "\n(1 item was already in the list)"
-                : "\n({$skippedCount} items were already in the list)";
-        }
-
-        return $message;
-    }
 }
