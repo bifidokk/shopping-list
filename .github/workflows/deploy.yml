@@ -48,8 +48,7 @@ jobs:
             cd /var/www/shopping-list
             git pull
             docker compose --file ./.docker/docker-compose.yml pull
-            docker compose --file ./.docker/docker-compose.yml down
-            docker volume rm shopping-list_shopping_list_app || true
+            docker compose --file ./.docker/docker-compose.yml down --volumes
             docker compose --file ./.docker/docker-compose.yml --env-file ./.docker/.env.prod up -d
             docker exec shopping_list_php bin/console cache:clear --env=prod
             docker exec shopping_list_php bin/console cache:warmup --env=prod
