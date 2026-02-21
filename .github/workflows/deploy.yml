@@ -46,6 +46,7 @@ jobs:
           script_stop: true
           script: |
             cd /var/www/shopping-list
+            docker image prune -af
             git pull
             docker compose -f ./.docker/docker-compose.yml pull
             docker compose -p shopping -f ./.docker/docker-compose.yml down --volumes || true
