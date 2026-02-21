@@ -1,5 +1,3 @@
-name: shopping-list
-
 services:
   db:
     container_name: shopping_list_db

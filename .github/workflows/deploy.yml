@@ -48,10 +48,9 @@ jobs:
             cd /var/www/shopping-list
             docker image prune -af
             git pull
-            docker compose -f ./.docker/docker-compose.yml pull
-            docker compose -p shopping -f ./.docker/docker-compose.yml down --volumes || true
-            docker compose -f ./.docker/docker-compose.yml down --volumes || true
-            docker compose -f ./.docker/docker-compose.yml --env-file ./.docker/.env.prod up -d
+            docker compose -p shopping -f ./.docker/docker-compose.yml pull
+            docker compose -p shopping -f ./.docker/docker-compose.yml down --volumes
+            docker compose -p shopping -f ./.docker/docker-compose.yml --env-file ./.docker/.env.prod up -d
             docker exec shopping_list_php bin/console cache:clear --env=prod
             docker exec shopping_list_php bin/console cache:warmup --env=prod
             docker exec shopping_list_php bin/console doctrine:migrations:migrate --no-interaction
