@@ -279,5 +279,4 @@ class TelegramWebhookService
 
         return $addedCount;
     }
-
 }
