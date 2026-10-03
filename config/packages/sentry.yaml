@@ -6,6 +6,9 @@ sentry:
             enabled: false
     options:
         environment: '%env(APP_ENV)%'
+        # Bots and scanners probe random URLs (robots.txt, wp-login.php, ...); 404s are not actionable
+        ignore_exceptions:
+            - 'Symfony\Component\HttpKernel\Exception\NotFoundHttpException'
 
 when@prod:
     sentry:
